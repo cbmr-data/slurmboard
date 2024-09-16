@@ -84,8 +84,8 @@ where
 
         let marker_width = 0;
         let spacing_width = (widths.len().saturating_sub(1)) as u16 * COLUMN_SPACING;
-        let bar_width = (area.width - marker_width - spacing_width - fixed_column_width)
-            / variable_length_columns.max(1);
+        let fixed_width = marker_width + spacing_width + fixed_column_width;
+        let bar_width = area.width.saturating_sub(fixed_width) / variable_length_columns.max(1);
 
         widths
             .into_iter()
