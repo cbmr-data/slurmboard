@@ -51,18 +51,19 @@ impl Slurm {
     fn collect_jobs(squeue: &str, mut partitions: Vec<Partition>) -> Result<Vec<Partition>> {
         // FIXME: Warn on unassigned jobs
         for job in Job::collect(squeue)? {
-            if !job.nodelist.is_empty() {
-                for partition in &mut partitions {
-                    if partition.name.same(&job.partition) {
-                        partition.jobs.push(job.clone());
+            for partition in &mut partitions {
+                if partition.name.same(&job.partition) {
+                    partition.jobs.push(job.clone());
 
+                    if !job.nodelist.is_empty() {
                         for node in &mut partition.nodes {
                             if job.nodelist.contains(&node.name) {
                                 node.jobs.push(job.clone());
                             }
                         }
-                        break;
                     }
+
+                    break;
                 }
             }
         }
