@@ -10,7 +10,7 @@ use super::nodes::PartitionName;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum JobTableState {
+pub enum JobState {
     /// Terminated due to launch failure
     BootFail,
     /// Cancelled by user/admin
@@ -45,7 +45,7 @@ pub enum JobTableState {
     Timeout,
 }
 
-impl fmt::Display for JobTableState {
+impl fmt::Display for JobState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(&self, f)
     }
@@ -155,7 +155,7 @@ pub struct Job {
     #[serde(deserialize_with = "PartitionName::from_str")]
     pub partition: PartitionName,
     /// State of the job; typically Running since source is `squeue`
-    pub state: JobTableState,
+    pub state: JobState,
     /// Owner of the job
     pub user: String,
 
