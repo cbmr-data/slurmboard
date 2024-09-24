@@ -3,7 +3,7 @@ mod misc;
 mod nodes;
 mod partitions;
 
-pub use jobs::Job;
+pub use jobs::{Job, JobState};
 pub use nodes::{CPUState, Node, NodeState};
 pub use partitions::Partition;
 

@@ -8,7 +8,7 @@ use serde::{de, Deserialize, Deserializer};
 
 use super::nodes::PartitionName;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum JobState {
     /// Terminated due to launch failure

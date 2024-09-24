@@ -3,12 +3,13 @@ use std::{cmp::Reverse, fmt::Debug};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
+    style::{Color, Stylize},
     symbols::border,
     text::Text,
     widgets::{Block, Borders, StatefulWidgetRef, TableState, Widget},
 };
 
-use crate::slurm::Job;
+use crate::slurm::{Job, JobState};
 use crate::widgets::misc::scroll;
 
 use super::{
@@ -115,8 +116,7 @@ impl GenericTableState<Column> for JobTableState {
 
     fn text<'a>(&self, _constraint: &Constraint, row: usize, column: Column) -> Text<'a> {
         let job = &self.jobs[row];
-
-        match column {
+        let text = match column {
             Column::JobID => job.id.to_string().into(),
             Column::User => job.user.clone().into(),
             Column::State => job.state.to_string().into(),
@@ -128,6 +128,12 @@ impl GenericTableState<Column> for JobTableState {
             Column::Memory => mb_to_string(job.mem).into(),
             Column::Nodelist => Text::from(job.nodelist.join(",")),
             Column::Name => job.name.clone().into(),
+        };
+
+        if job.state != JobState::Running {
+            text.fg(Color::Gray)
+        } else {
+            text
         }
     }
 
