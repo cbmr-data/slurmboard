@@ -14,8 +14,8 @@ pub struct Utilization {
     pub utilized: f64,
     /// Amount of resources allocated to users. Must be less or equal to capacity
     pub allocated: f64,
-    /// Amount of resources "blocked" due to overallocation of linked resources;
-    /// CPUs may for example be "blocked" due to overallocation of RAM, unless a
+    /// Amount of resources "blocked" due to (over)allocation of linked resources;
+    /// CPUs may for example be "blocked" due to (over)allocation of RAM, unless a
     /// user explicitly asks for less than the default amount of RAM per CPU.
     pub blocked: f64,
     /// Amount of resources unavailable for other reasons (node down)

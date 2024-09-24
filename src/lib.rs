@@ -6,7 +6,7 @@ pub mod args;
 pub mod event;
 /// Event handler.
 pub mod handler;
-/// Quering of Slurm state
+/// Querying of Slurm state
 pub mod slurm;
 /// Terminal user interface
 pub mod tui;

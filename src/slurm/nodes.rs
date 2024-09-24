@@ -158,7 +158,7 @@ impl NodeState {
         })
     }
 
-    /// Returns true if the node is available for excuting jobs
+    /// Returns true if the node is available for executing jobs
     pub fn is_available(&self) -> bool {
         self.responds
             && matches!(

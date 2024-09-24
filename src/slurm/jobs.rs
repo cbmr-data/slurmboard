@@ -15,7 +15,7 @@ pub enum JobState {
     BootFail,
     /// Cancelled by user/admin
     Cancelled,
-    /// Completed succesfully
+    /// Completed successfully
     Completed,
     /// Completing; processes may still be running
     Completing,
