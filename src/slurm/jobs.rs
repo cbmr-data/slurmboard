@@ -260,15 +260,12 @@ impl Job {
     fn update_from_tres(&mut self) -> Result<()> {
         for resource in self.tres.split(',') {
             let fields: Vec<_> = resource.splitn(3, ':').collect();
-            match fields.first() {
-                Some(&"gpu") => {
-                    self.gpus = fields
-                        .last()
-                        .unwrap()
-                        .parse()
-                        .with_context(|| format!("parsing gpus in TRES: {:?}", self.tres))?
-                }
-                _ => {}
+            if fields.first() == Some(&"gpu") {
+                self.gpus = fields
+                    .last()
+                    .unwrap()
+                    .parse()
+                    .with_context(|| format!("parsing gpus in TRES: {:?}", self.tres))?
             }
         }
 

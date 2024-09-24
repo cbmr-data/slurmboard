@@ -141,7 +141,7 @@ where
                 state.columns().iter().map(C::to_string).collect::<Vec<_>>(),
             ));
 
-        StatefulWidgetRef::render_ref(&table, area, buf, &mut state.inner_state());
+        StatefulWidgetRef::render_ref(&table, area, buf, state.inner_state());
     }
 }
 
