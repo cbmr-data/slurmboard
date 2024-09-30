@@ -6,7 +6,7 @@ use color_eyre::{
 };
 use serde::{de, Deserialize, Deserializer};
 
-use super::nodes::PartitionName;
+use super::{misc::format_string, nodes::PartitionName};
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -193,14 +193,7 @@ impl Job {
     pub fn collect(exe: &str) -> Result<Vec<Job>> {
         // FIXME: Generate parameters on demand
         let output = Command::new(exe)
-            .args([
-                "--Format",
-                "JobID:0|,NodeList:0|,\
-                Partition:0|,State:0|,\
-                UserName:0|,NumTasks:0|,\
-                Tres-Alloc:0|,Tres-Per-Node:0|,\
-                TimeUsed:0|,Name:0",
-            ])
+            .args(["--Format", &squeue_format()])
             .output()
             .wrap_err_with(|| format!("failed to execute {:?}", exe))?;
 
@@ -272,6 +265,25 @@ impl Job {
 
         Ok(())
     }
+}
+
+/// Generates parameter for the `-F` command-line option for `squeue`
+fn squeue_format() -> String {
+    format_string(
+        [
+            "JobID",
+            "NodeList",
+            "Partition",
+            "State",
+            "UserName",
+            "NumTasks",
+            "Tres-Alloc",
+            "Tres-Per-Node",
+            "TimeUsed",
+            "Name",
+        ]
+        .iter(),
+    )
 }
 
 fn nodelist_from_str<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
