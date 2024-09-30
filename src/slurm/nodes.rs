@@ -248,7 +248,10 @@ impl Node {
         // Reserved RAM "blocks" the allocation of CPUs, unless the end-user
         // explicitly requests less RAM per CPU for a job.
         let blocked = if mem_per_cpu > 0 {
-            (self.mem_alloc as f64 / mem_per_cpu as f64).ceil()
+            let free_mem = self.mem - self.mem_alloc;
+
+            // The amount of RAM available may be greater than mem_per_cpu * self.cpus
+            self.cpus.saturating_sub(free_mem / mem_per_cpu as usize) as f64
         } else {
             0.0
         };
@@ -269,6 +272,7 @@ impl Node {
             .mem
             .saturating_sub(self.mem_free.unwrap_or(self.mem))
             .min(self.mem_alloc) as f64;
+
         // Memory is considered "blocked" if there are no CPUs available for allocation
         let (blocked, unavailable) =
             if self.cpu_state.allocated + self.cpu_state.other < self.cpu_state.total {
