@@ -74,22 +74,34 @@ impl<'de> Visitor<'de> for CPUStateVisitor {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SlurmState {
+    #[serde(alias = "alloc")]
     Allocated,
+    #[serde(alias = "comp")]
     Completing,
     Down,
+    #[serde(alias = "drain")]
     Drained,
+    #[serde(alias = "drng")]
     Draining,
     Fail,
+    #[serde(alias = "failg")]
     Failing,
+    #[serde(alias = "futr")]
     Future,
     Idle,
-    #[serde(rename = "maint")]
+    #[serde(alias = "maint")]
     Maintenance,
+    #[serde(alias = "mix")]
     Mixed,
+    #[serde(alias = "npc")]
     Perfctrs,
+    #[serde(alias = "pow_dn")]
     PowerDown,
+    #[serde(alias = "pow_up")]
     PowerUp,
+    #[serde(alias = "resv")]
     Reserved,
+    #[serde(alias = "unk")]
     Unknown,
 }
 
