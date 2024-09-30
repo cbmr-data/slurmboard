@@ -17,7 +17,7 @@ use ratatui::{
 
 use crate::{
     app::App,
-    widgets::{JobTable, JobTableState, NodeTable, NodeTableState, Selection},
+    widgets::{JobTable, JobTableState, NodeTable, NodeTableState, SelectionRef},
 };
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -53,17 +53,17 @@ impl UI {
 
     pub fn update(&mut self, app: &App) {
         self.node_state.update(app.cluster.clone());
-        self.scroll_node_selection(app, 0);
+        self.scroll_node_selection(0);
     }
 
-    pub fn scroll(&mut self, app: &App, delta: isize) {
+    pub fn scroll(&mut self, delta: isize) {
         match self.focus {
-            Focus::Nodes => self.scroll_node_selection(app, delta),
+            Focus::Nodes => self.scroll_node_selection(delta),
             Focus::Jobs => self.scroll_job_selection(delta),
         }
     }
 
-    pub fn mouse_click(&mut self, app: &App, row: u16) {
+    pub fn mouse_click(&mut self, row: u16) {
         if let Some(focus) = self.focus_at(row) {
             if self.focus != focus {
                 self.toggle_focus();
@@ -73,21 +73,21 @@ impl UI {
                 Focus::Nodes => {
                     // -1 for border
                     self.node_state.click(row.saturating_sub(1) as usize);
-                    self.scroll_node_selection(app, 0)
+                    self.scroll_node_selection(0)
                 }
                 Focus::Jobs => {
                     self.job_state
                         .click(row.saturating_sub(self.node_layout.height) as usize);
-                    self.scroll_node_selection(app, 0)
+                    self.scroll_node_selection(0)
                 }
             }
         }
     }
 
-    pub fn mouse_wheel(&mut self, app: &App, row: u16, delta: isize) {
+    pub fn mouse_wheel(&mut self, row: u16, delta: isize) {
         match self.focus_at(row) {
             Some(Focus::Jobs) => self.scroll_job_selection(delta),
-            Some(Focus::Nodes) => self.scroll_node_selection(app, delta),
+            Some(Focus::Nodes) => self.scroll_node_selection(delta),
             None => {}
         }
     }
@@ -138,14 +138,13 @@ impl UI {
     }
 
     /// Scrolls the node selection and updates the job-list
-    fn scroll_node_selection(&mut self, app: &App, delta: isize) {
+    fn scroll_node_selection(&mut self, delta: isize) {
         match self.node_state.scroll(delta) {
-            Some(Selection::Partition(partition)) => {
-                self.job_state.update(&app.cluster[partition].jobs);
+            Some(SelectionRef::Partition(partition)) => {
+                self.job_state.update(&partition.jobs);
             }
-            Some(Selection::Node(partition, node)) => {
-                self.job_state
-                    .update(&app.cluster[partition].nodes[node].jobs);
+            Some(SelectionRef::Node(node)) => {
+                self.job_state.update(&node.jobs);
             }
             _ => self.job_state.update(&[]),
         }

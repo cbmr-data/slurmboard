@@ -33,10 +33,10 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App, ui: &mut UI) -> Res
             }
         }
         // Scrolling
-        KeyCode::Up => ui.scroll(app, -1),
-        KeyCode::Down => ui.scroll(app, 1),
-        KeyCode::PageUp => ui.scroll(app, -10),
-        KeyCode::PageDown => ui.scroll(app, 10),
+        KeyCode::Up => ui.scroll(-1),
+        KeyCode::Down => ui.scroll(1),
+        KeyCode::PageUp => ui.scroll(-10),
+        KeyCode::PageDown => ui.scroll(10),
         // Switch focus between nodes / jobs
         KeyCode::Tab | KeyCode::BackTab => ui.toggle_focus(),
         _ => processed = false,
@@ -45,11 +45,11 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App, ui: &mut UI) -> Res
     Ok(processed)
 }
 
-pub fn handle_mouse_events(event: MouseEvent, app: &mut App, ui: &mut UI) -> Result<bool> {
+pub fn handle_mouse_events(event: MouseEvent, ui: &mut UI) -> Result<bool> {
     match event.kind {
-        MouseEventKind::Down(MouseButton::Left) => ui.mouse_click(app, event.row),
-        MouseEventKind::ScrollUp => ui.mouse_wheel(app, event.row, -1),
-        MouseEventKind::ScrollDown => ui.mouse_wheel(app, event.row, 1),
+        MouseEventKind::Down(MouseButton::Left) => ui.mouse_click(event.row),
+        MouseEventKind::ScrollUp => ui.mouse_wheel(event.row, -1),
+        MouseEventKind::ScrollDown => ui.mouse_wheel(event.row, 1),
         _ => return Ok(false),
     }
 

@@ -6,6 +6,6 @@ mod table;
 mod utilization;
 
 pub use jobs::{JobTable, JobTableState};
-pub use nodes::{NodeTable, NodeTableState, Selection};
+pub use nodes::{NodeTable, NodeTableState, Selection, SelectionRef};
 pub use scrollbar::RightScrollbar;
 pub use utilization::Utilization;

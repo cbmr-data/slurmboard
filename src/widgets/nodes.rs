@@ -24,6 +24,12 @@ pub enum Selection {
 }
 
 #[derive(Clone, Copy, Debug)]
+pub enum SelectionRef<'a> {
+    Partition(&'a Partition),
+    Node(&'a Node),
+}
+
+#[derive(Clone, Copy, Debug)]
 pub enum Column {
     Node,
     State,
@@ -106,9 +112,9 @@ impl NodeTableState {
         self.focus = focus;
     }
 
-    pub fn scroll(&mut self, delta: isize) -> Option<Selection> {
+    pub fn scroll(&mut self, delta: isize) -> Option<SelectionRef> {
         let items = &self.selections;
-        let selection = loop {
+        loop {
             // Skip across across spacing elements
             if let Some(idx) = scroll(&mut self.table, items.len(), delta) {
                 if !matches!(items[idx], Selection::Spacing)
@@ -116,14 +122,30 @@ impl NodeTableState {
                     || (delta < 0 && idx == 0)
                     || (delta > 0 && idx + 1 >= items.len())
                 {
-                    break Some(idx);
+                    break;
                 }
             } else {
-                break None;
+                break;
             }
-        };
+        }
 
-        selection.map(|idx| items[idx])
+        self.selected()
+    }
+
+    pub fn selected(&self) -> Option<SelectionRef> {
+        if let Some(idx) = self.table.selected() {
+            match self.selections[idx] {
+                Selection::Partition(partition) => {
+                    Some(SelectionRef::Partition(&self.cluster[partition]))
+                }
+                Selection::Node(partition, node) => {
+                    Some(SelectionRef::Node(&self.cluster[partition].nodes[node]))
+                }
+                Selection::Spacing => None,
+            }
+        } else {
+            None
+        }
     }
 
     pub fn click(&mut self, row: usize) {
