@@ -297,7 +297,7 @@ impl Node {
 
     pub fn collect(exe: &str) -> Result<Vec<Node>> {
         let output = Command::new(exe)
-            .args(["-N", "--Format", &squeue_format()])
+            .args(["-N", "--Format", &sinfo_format()])
             .output()
             .wrap_err("failed to execute squeue")?;
 
@@ -316,7 +316,7 @@ impl Node {
             .from_reader(reader)
             .deserialize::<Node>()
         {
-            let mut node = node.wrap_err("error while parsing squeue output")?;
+            let mut node = node.wrap_err("error while parsing sinfo output")?;
             node.gpus = parse_gpus(&node.gres).wrap_err("parsing GRES")?;
             node.gpus_used = parse_gpus(&node.gres_used).wrap_err("parsing GRES_USED")?;
 
@@ -327,8 +327,8 @@ impl Node {
     }
 }
 
-/// Generates parameter for the `-F` command-line option for `squeue`
-fn squeue_format() -> String {
+/// Generates parameter for the `-F` command-line option for `sinfo`
+fn sinfo_format() -> String {
     format_string(
         [
             "AllocMem",
