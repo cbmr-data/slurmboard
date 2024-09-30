@@ -218,6 +218,7 @@ impl Job {
     {
         let mut reader = csv::ReaderBuilder::new()
             .delimiter(b'|')
+            .trim(csv::Trim::All)
             .from_reader(reader);
 
         let mut results = Vec::new();

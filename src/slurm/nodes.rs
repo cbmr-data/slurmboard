@@ -325,6 +325,7 @@ impl Node {
         let mut nodes = Vec::new();
         for node in csv::ReaderBuilder::new()
             .delimiter(b'|')
+            .trim(csv::Trim::All)
             .from_reader(reader)
             .deserialize::<Node>()
         {
