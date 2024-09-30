@@ -114,18 +114,13 @@ impl NodeTableState {
     }
 
     pub fn scroll(&mut self, delta: isize) -> Option<Selection> {
-        let items = &self.rows;
-        loop {
-            // Skip across across spacing elements
-            if let Some(idx) = scroll(&mut self.table, items.len(), delta) {
-                if !matches!(items[idx], NodeRow::Spacing)
-                    || delta == 0
-                    || (delta < 0 && idx == 0)
-                    || (delta > 0 && idx + 1 >= items.len())
-                {
-                    break;
-                }
-            } else {
+        // Skip across across spacing elements
+        while let Some(idx) = scroll(&mut self.table, self.rows.len(), delta) {
+            if !matches!(self.rows[idx], NodeRow::Spacing)
+                || delta == 0
+                || (delta < 0 && idx == 0)
+                || (delta > 0 && idx + 1 >= self.rows.len())
+            {
                 break;
             }
         }
