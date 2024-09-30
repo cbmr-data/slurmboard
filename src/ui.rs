@@ -112,8 +112,8 @@ impl UI {
             let layout = Layout::default()
                 .direction(ratatui::layout::Direction::Vertical)
                 .constraints(vec![
-                    // +3 for borders and an empty line to clearly indicate the end of the list
-                    Constraint::Max((self.node_state.height() + 3).max(5)),
+                    // +2 for borders and an empty line to clearly indicate the end of the list
+                    Constraint::Max((self.node_state.height() + 2).max(5)),
                     Constraint::Min(4),
                 ])
                 .split(area);
@@ -156,21 +156,14 @@ impl UI {
     }
 
     fn render_nodes(&mut self, area: Rect, buf: &mut Buffer, instructions: Title) {
-        let title = vec![" Slurm ".bold()];
+        let title = vec![" Partitions ".bold()];
         let title = Title::from(Line::from(title));
 
-        // Border with
-        let border = symbols::border::Set {
-            bottom_left: symbols::line::NORMAL.vertical_right,
-            bottom_right: symbols::line::NORMAL.vertical_left,
-            ..symbols::border::PLAIN
-        };
-
         let block = Block::default()
-            .title(title.alignment(Alignment::Center))
+            .title(title.clone().alignment(Alignment::Center))
             .title(instructions)
-            .borders(Borders::ALL)
-            .border_set(border);
+            .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT)
+            .border_set(border::PLAIN);
 
         self.nodes
             .render_ref(block.inner(area), buf, &mut self.node_state);
@@ -178,10 +171,24 @@ impl UI {
     }
 
     fn render_users(&mut self, area: Rect, buf: &mut Buffer, instructions: Title) {
+        let title = match self.node_state.selected() {
+            Some(SelectionRef::Node(node)) => format!(" {} ", node.name),
+            Some(SelectionRef::Partition(partition)) => format!(" {} ", partition.name),
+            None => String::default(),
+        };
+
+        // Join border with border-less bottom of nodes table
+        let border = symbols::border::Set {
+            top_left: symbols::line::NORMAL.vertical_right,
+            top_right: symbols::line::NORMAL.vertical_left,
+            ..symbols::border::PLAIN
+        };
+
         let block = Block::default()
+            .title(Title::from(title).alignment(Alignment::Center))
             .title(instructions)
-            .borders(Borders::BOTTOM | Borders::LEFT | Borders::RIGHT)
-            .border_set(border::PLAIN);
+            .borders(Borders::ALL)
+            .border_set(border);
 
         self.jobs
             .render_ref(block.inner(area), buf, &mut self.job_state);
