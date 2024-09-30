@@ -17,14 +17,14 @@ use super::{
 };
 
 #[derive(Clone, Copy, Debug)]
-pub enum Selection {
+pub enum NodeRow {
     Spacing,
     Partition(usize),
     Node(usize, usize),
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum SelectionRef<'a> {
+pub enum Selection<'a> {
     Partition(&'a Partition),
     Node(&'a Node),
 }
@@ -56,7 +56,8 @@ pub struct NodeTableState {
     columns: Vec<Column>,
     table: TableState,
     cluster: Rc<Vec<Partition>>,
-    selections: Vec<Selection>,
+    /// Rows of nodes/partitions as indices into `cluster`, plus empty rows
+    rows: Vec<NodeRow>,
 
     /// Value of DefMemPerCPU from /etc/slurm/slurm.conf
     def_mem_per_cpu: u64,
@@ -68,7 +69,7 @@ impl GenericTableState<Column> for NodeTableState {
     }
 
     fn nrows(&self) -> usize {
-        self.selections.len()
+        self.rows.len()
     }
 
     fn columns(&self) -> &[Column] {
@@ -84,17 +85,17 @@ impl GenericTableState<Column> for NodeTableState {
     }
 
     fn text<'a>(&self, constraint: &Constraint, row: usize, column: Column) -> Text<'a> {
-        match self.selections[row] {
-            Selection::Partition(partition) => {
+        match self.rows[row] {
+            NodeRow::Partition(partition) => {
                 self.partition_text(&self.cluster[partition], constraint, column)
             }
-            Selection::Node(partition, node) => self.node_text(
+            NodeRow::Node(partition, node) => self.node_text(
                 &self.cluster[partition].nodes[node],
                 constraint,
                 column,
                 node == self.cluster[partition].nodes.len().saturating_sub(1),
             ),
-            Selection::Spacing => Text::default(),
+            NodeRow::Spacing => Text::default(),
         }
     }
 
@@ -112,12 +113,12 @@ impl NodeTableState {
         self.focus = focus;
     }
 
-    pub fn scroll(&mut self, delta: isize) -> Option<SelectionRef> {
-        let items = &self.selections;
+    pub fn scroll(&mut self, delta: isize) -> Option<Selection> {
+        let items = &self.rows;
         loop {
             // Skip across across spacing elements
             if let Some(idx) = scroll(&mut self.table, items.len(), delta) {
-                if !matches!(items[idx], Selection::Spacing)
+                if !matches!(items[idx], NodeRow::Spacing)
                     || delta == 0
                     || (delta < 0 && idx == 0)
                     || (delta > 0 && idx + 1 >= items.len())
@@ -132,16 +133,16 @@ impl NodeTableState {
         self.selected()
     }
 
-    pub fn selected(&self) -> Option<SelectionRef> {
+    pub fn selected(&self) -> Option<Selection> {
         if let Some(idx) = self.table.selected() {
-            match self.selections[idx] {
-                Selection::Partition(partition) => {
-                    Some(SelectionRef::Partition(&self.cluster[partition]))
+            match self.rows[idx] {
+                NodeRow::Partition(partition) => {
+                    Some(Selection::Partition(&self.cluster[partition]))
                 }
-                Selection::Node(partition, node) => {
-                    Some(SelectionRef::Node(&self.cluster[partition].nodes[node]))
+                NodeRow::Node(partition, node) => {
+                    Some(Selection::Node(&self.cluster[partition].nodes[node]))
                 }
-                Selection::Spacing => None,
+                NodeRow::Spacing => None,
             }
         } else {
             None
@@ -150,8 +151,8 @@ impl NodeTableState {
 
     pub fn click(&mut self, row: usize) {
         let offset = self.table.offset().saturating_add(row).saturating_sub(1);
-        if let Some(selection) = self.selections.get(offset) {
-            if !matches!(selection, Selection::Spacing) {
+        if let Some(selection) = self.rows.get(offset) {
+            if !matches!(selection, NodeRow::Spacing) {
                 self.table.select(Some(offset));
             }
         }
@@ -168,26 +169,26 @@ impl NodeTableState {
     }
 
     fn update_selections(&mut self) {
-        self.selections.clear();
+        self.rows.clear();
 
         for (p_idx, partition) in self.cluster.iter().enumerate() {
-            self.selections.push(Selection::Partition(p_idx));
+            self.rows.push(NodeRow::Partition(p_idx));
 
             for (n_idx, node) in partition.nodes.iter().enumerate() {
                 if !self.hide_unavailable || node.state.is_available() {
-                    self.selections.push(Selection::Node(p_idx, n_idx));
+                    self.rows.push(NodeRow::Node(p_idx, n_idx));
                 }
             }
 
-            self.selections.push(Selection::Spacing);
+            self.rows.push(NodeRow::Spacing);
         }
 
         // Remove trailing spacing
-        self.selections.pop();
+        self.rows.pop();
     }
 
     pub fn height(&self) -> u16 {
-        self.selections.len() as u16 + 1 // +1 for headers
+        self.rows.len() as u16 + 1 // +1 for headers
     }
 
     fn partition_text<'a>(
@@ -292,7 +293,7 @@ impl Default for NodeTableState {
             ],
             table: TableState::default(),
             cluster: Rc::default(),
-            selections: Vec::default(),
+            rows: Vec::default(),
             def_mem_per_cpu: 0,
         }
     }

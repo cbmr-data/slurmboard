@@ -17,7 +17,7 @@ use ratatui::{
 
 use crate::{
     app::App,
-    widgets::{JobTable, JobTableState, NodeTable, NodeTableState, SelectionRef},
+    widgets::{JobTable, JobTableState, NodeTable, NodeTableState, Selection},
 };
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -140,10 +140,10 @@ impl UI {
     /// Scrolls the node selection and updates the job-list
     fn scroll_node_selection(&mut self, delta: isize) {
         match self.node_state.scroll(delta) {
-            Some(SelectionRef::Partition(partition)) => {
+            Some(Selection::Partition(partition)) => {
                 self.job_state.update(&partition.jobs);
             }
-            Some(SelectionRef::Node(node)) => {
+            Some(Selection::Node(node)) => {
                 self.job_state.update(&node.jobs);
             }
             _ => self.job_state.update(&[]),
@@ -172,8 +172,8 @@ impl UI {
 
     fn render_users(&mut self, area: Rect, buf: &mut Buffer, instructions: Title) {
         let title = match self.node_state.selected() {
-            Some(SelectionRef::Node(node)) => format!(" {} ", node.name),
-            Some(SelectionRef::Partition(partition)) => format!(" {} ", partition.name),
+            Some(Selection::Node(node)) => format!(" {} ", node.name),
+            Some(Selection::Partition(partition)) => format!(" {} ", partition.name),
             None => String::default(),
         };
 
