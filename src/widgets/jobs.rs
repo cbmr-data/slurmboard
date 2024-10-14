@@ -20,6 +20,7 @@ use super::{
 #[derive(Clone, Copy, Debug)]
 enum Column {
     JobID,
+    JobArray,
     User,
     State,
     Runtime,
@@ -76,6 +77,7 @@ impl Default for JobTableState {
             focus: false,
             columns: vec![
                 Column::JobID,
+                Column::JobArray,
                 Column::User,
                 Column::State,
                 Column::Runtime,
@@ -118,6 +120,17 @@ impl GenericTableState<Column> for JobTableState {
         let job = &self.jobs[row];
         let text = match column {
             Column::JobID => job.id.to_string().into(),
+            Column::JobArray => {
+                if job.array_task_id != "N/A" {
+                    if job.array_job_id != job.id {
+                        format!("{} [{}]", job.array_job_id, job.array_task_id).into()
+                    } else {
+                        format!("[{}]", job.array_task_id).into()
+                    }
+                } else {
+                    Text::default()
+                }
+            }
             Column::User => job.user.clone().into(),
             Column::State => job.state.to_string().into(),
             Column::Runtime => right_align_text(&job.time),

@@ -181,6 +181,11 @@ pub struct Job {
     /// Full name of the job
     pub name: String,
 
+    /// ID of job array, same as `id` if this is the job array
+    pub array_job_id: usize,
+    /// Description of job array, Nth task in array, or NA for non-array jobs
+    pub array_task_id: String,
+
     /// Generic resources requested (nodes, cpus, ram)
     #[serde(rename = "TRES_ALLOC")]
     gres: String,
@@ -271,16 +276,18 @@ impl Job {
 fn squeue_format() -> String {
     format_string(
         [
+            "ArrayJobID",
+            "ArrayTaskID",
             "JobID",
+            "Name",
             "NodeList",
+            "NumTasks",
             "Partition",
             "State",
-            "UserName",
-            "NumTasks",
+            "TimeUsed",
             "Tres-Alloc",
             "Tres-Per-Node",
-            "TimeUsed",
-            "Name",
+            "UserName",
         ]
         .iter(),
     )
