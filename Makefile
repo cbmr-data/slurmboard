@@ -1,4 +1,4 @@
-.PHONEY := debug release static
+.PHONY: debug release static
 
 debug:
 	cargo build

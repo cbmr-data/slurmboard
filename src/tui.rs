@@ -62,7 +62,7 @@ impl<B: Backend> Tui<B> {
     /// [`Draw`]: ratatui::Terminal::draw
     pub fn draw(&mut self, ui: &mut UI) -> Result<()> {
         self.terminal
-            .draw(|frame| ui.render(frame.size(), frame.buffer_mut()))?;
+            .draw(|frame| ui.render(frame.area(), frame.buffer_mut()))?;
 
         Ok(())
     }

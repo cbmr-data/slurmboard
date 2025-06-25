@@ -1,6 +1,6 @@
 use ratatui::{
     buffer::Buffer,
-    layout::{Alignment, Constraint, Layout, Rect},
+    layout::{Constraint, Layout, Rect},
     symbols,
     widgets::{Block, StatefulWidgetRef, Widget},
 };
@@ -9,10 +9,7 @@ use ratatui::{
     prelude::Stylize,
     symbols::border,
     text::Line,
-    widgets::{
-        block::{Position, Title},
-        Borders,
-    },
+    widgets::Borders,
 };
 
 use crate::{
@@ -118,7 +115,7 @@ impl UI {
                 ])
                 .split(area);
 
-            self.render_nodes(layout[0], buf, Title::default());
+            self.render_nodes(layout[0], buf, Line::default());
             self.render_users(layout[1], buf, UI::instructions());
             self.node_layout = layout[0];
         } else {
@@ -155,13 +152,10 @@ impl UI {
         self.job_state.scroll(delta)
     }
 
-    fn render_nodes(&mut self, area: Rect, buf: &mut Buffer, instructions: Title) {
-        let title = vec![" Partitions ".bold()];
-        let title = Title::from(Line::from(title));
-
+    fn render_nodes(&mut self, area: Rect, buf: &mut Buffer, instructions: Line) {
         let block = Block::default()
-            .title(title.clone().alignment(Alignment::Center))
-            .title(instructions)
+            .title_top(Line::from(" Partitions ").bold().centered())
+            .title_bottom(instructions)
             .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT)
             .border_set(border::PLAIN);
 
@@ -170,7 +164,7 @@ impl UI {
         block.render(area, buf);
     }
 
-    fn render_users(&mut self, area: Rect, buf: &mut Buffer, instructions: Title) {
+    fn render_users(&mut self, area: Rect, buf: &mut Buffer, instructions: Line) {
         let title = match self.node_state.selected() {
             Some(Selection::Node(node)) => format!(" {} ", node.name),
             Some(Selection::Partition(partition)) => format!(" {} ", partition.name),
@@ -185,8 +179,8 @@ impl UI {
         };
 
         let block = Block::default()
-            .title(Title::from(title).alignment(Alignment::Center))
-            .title(instructions)
+            .title_top(Line::from(title).centered())
+            .title_bottom(instructions)
             .borders(Borders::ALL)
             .border_set(border);
 
@@ -195,16 +189,14 @@ impl UI {
         block.render(area, buf);
     }
 
-    fn instructions() -> Title<'static> {
-        Title::from(Line::from(vec![
+    fn instructions() -> Line<'static> {
+        Line::from(vec![
             " <H> ".bold(),
             "Hide/Show unavailable".into(),
             " <R> ".bold(),
             "Refresh".into(),
             " <Q> ".bold(),
             "Quit ".into(),
-        ]))
-        .alignment(Alignment::Center)
-        .position(Position::Bottom)
+        ]).centered()
     }
 }
