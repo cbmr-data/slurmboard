@@ -264,7 +264,9 @@ impl Job {
                     .last()
                     .unwrap()
                     .parse()
-                    .with_context(|| format!("parsing gpus in TRES: {:?}", self.tres))?
+                    // Slurm accepts gpu:model:n, gpu:model, and gpu:n, so if
+                    // last field isn't a number, then assume that it's a model
+                    .unwrap_or(1)
             }
         }
 
