@@ -33,10 +33,12 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App, ui: &mut UI) -> Res
             }
         }
         // Scrolling
+        KeyCode::Home => ui.scroll(isize::MIN),
+        KeyCode::PageUp => ui.scroll(-10),
         KeyCode::Up => ui.scroll(-1),
         KeyCode::Down => ui.scroll(1),
-        KeyCode::PageUp => ui.scroll(-10),
         KeyCode::PageDown => ui.scroll(10),
+        KeyCode::End => ui.scroll(isize::MAX),
         // Switch focus between nodes / jobs
         KeyCode::Tab | KeyCode::BackTab => ui.toggle_focus(),
         _ => processed = false,

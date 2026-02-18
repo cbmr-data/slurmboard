@@ -12,10 +12,9 @@ pub fn scroll(state: &mut TableState, items: usize, delta: isize) -> Option<usiz
     let selection = if items == 0 {
         None
     } else {
-        Some(
-            (state.selected().unwrap_or_default() as isize + delta).clamp(0, items as isize - 1)
-                as usize,
-        )
+        let selected = state.selected().unwrap_or_default() as isize;
+
+        Some(selected.saturating_add(delta).clamp(0, items as isize - 1) as usize)
     };
 
     state.select(selection);
