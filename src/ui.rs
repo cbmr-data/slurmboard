@@ -5,12 +5,7 @@ use ratatui::{
     widgets::{Block, StatefulWidgetRef, Widget},
 };
 
-use ratatui::{
-    prelude::Stylize,
-    symbols::border,
-    text::Line,
-    widgets::Borders,
-};
+use ratatui::{prelude::Stylize, symbols::border, text::Line, widgets::Borders};
 
 use crate::{
     app::App,
@@ -66,10 +61,11 @@ impl UI {
                 self.toggle_focus();
             }
 
+            // -1 for top border
+            let row = row.saturating_sub(1);
             match focus {
                 Focus::Nodes => {
-                    // -1 for border
-                    self.node_state.click(row.saturating_sub(1) as usize);
+                    self.node_state.click(row as usize);
                     self.scroll_node_selection(0)
                 }
                 Focus::Jobs => {
@@ -109,7 +105,7 @@ impl UI {
             let layout = Layout::default()
                 .direction(ratatui::layout::Direction::Vertical)
                 .constraints(vec![
-                    // +2 for borders and an empty line to clearly indicate the end of the list
+                    // +2 for top border and an empty line to clearly indicate the end of the list
                     Constraint::Max((self.node_state.height() + 2).max(5)),
                     Constraint::Min(4),
                 ])
@@ -197,6 +193,7 @@ impl UI {
             "Refresh".into(),
             " <Q> ".bold(),
             "Quit ".into(),
-        ]).centered()
+        ])
+        .centered()
     }
 }
