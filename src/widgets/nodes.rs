@@ -16,17 +16,17 @@ use super::{
     table::{GenericTable, GenericTableState},
 };
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub enum NodeRow {
     Spacing,
-    Partition(usize),
-    Node(usize, usize),
+    Partition(Rc<Partition>),
+    Node(Rc<Node>, bool),
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum Selection<'a> {
-    Partition(&'a Partition),
-    Node(&'a Node),
+#[derive(Clone, Debug)]
+pub enum Selection {
+    Partition(Rc<Partition>),
+    Node(Rc<Node>),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -85,16 +85,9 @@ impl GenericTableState<Column> for NodeTableState {
     }
 
     fn text<'a>(&self, constraint: &Constraint, row: usize, column: Column) -> Text<'a> {
-        match self.rows[row] {
-            NodeRow::Partition(partition) => {
-                self.partition_text(&self.cluster[partition], constraint, column)
-            }
-            NodeRow::Node(partition, node) => self.node_text(
-                &self.cluster[partition].nodes[node],
-                constraint,
-                column,
-                node == self.cluster[partition].nodes.len().saturating_sub(1),
-            ),
+        match &self.rows[row] {
+            NodeRow::Partition(partition) => self.partition_text(partition, constraint, column),
+            NodeRow::Node(node, last) => self.node_text(node, constraint, column, *last),
             NodeRow::Spacing => Text::default(),
         }
     }
@@ -130,13 +123,9 @@ impl NodeTableState {
 
     pub fn selected(&self) -> Option<Selection> {
         if let Some(idx) = self.table.selected() {
-            match self.rows[idx] {
-                NodeRow::Partition(partition) => {
-                    Some(Selection::Partition(&self.cluster[partition]))
-                }
-                NodeRow::Node(partition, node) => {
-                    Some(Selection::Node(&self.cluster[partition].nodes[node]))
-                }
+            match &self.rows[idx] {
+                NodeRow::Partition(partition) => Some(Selection::Partition(partition.clone())),
+                NodeRow::Node(node, _) => Some(Selection::Node(node.clone())),
                 NodeRow::Spacing => None,
             }
         } else {
@@ -166,12 +155,15 @@ impl NodeTableState {
     fn update_selections(&mut self) {
         self.rows.clear();
 
-        for (p_idx, partition) in self.cluster.iter().enumerate() {
-            self.rows.push(NodeRow::Partition(p_idx));
+        for partition in &self.cluster {
+            self.rows.push(NodeRow::Partition(partition.clone()));
 
             for (n_idx, node) in partition.nodes.iter().enumerate() {
                 if !self.hide_unavailable || node.state.is_available() {
-                    self.rows.push(NodeRow::Node(p_idx, n_idx));
+                    self.rows.push(NodeRow::Node(
+                        node.clone(),
+                        n_idx + 1 == partition.nodes.len(),
+                    ));
                 }
             }
 
