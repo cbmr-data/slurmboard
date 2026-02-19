@@ -106,7 +106,7 @@ impl NodeTableState {
         self.focus = focus;
     }
 
-    pub fn scroll(&mut self, delta: isize) -> Option<Selection<'_>> {
+    pub fn scroll(&mut self, mut delta: isize) -> Option<Selection> {
         // Skip across across spacing elements
         while let Some(idx) = scroll(&mut self.table, self.rows.len(), delta) {
             if !matches!(self.rows[idx], NodeRow::Spacing)
@@ -116,6 +116,8 @@ impl NodeTableState {
             {
                 break;
             }
+
+            delta = delta.clamp(-1, 1);
         }
 
         self.selected()
