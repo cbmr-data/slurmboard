@@ -354,13 +354,13 @@ impl StatefulWidgetRef for NodeTable {
 
 /// Colorize a Node state based on availability
 fn color_state_text<'a>(state: &NodeState) -> Text<'a> {
-    let color = if state.is_available() {
-        Color::White
-    } else {
-        Color::Red
-    };
+    let text = Text::from(state.to_string());
 
-    Text::from(state.to_string()).fg(color)
+    if state.is_available() {
+        text.dim()
+    } else {
+        text.fg(Color::Red)
+    }
 }
 
 fn constraint_length(c: Constraint) -> u16 {

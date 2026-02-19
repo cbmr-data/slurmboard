@@ -3,7 +3,7 @@ use std::{fmt::Display, marker::PhantomData};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
-    style::{Color, Style},
+    style::Stylize,
     text::Text,
     widgets::{Row, StatefulWidgetRef, Table, TableState},
 };
@@ -124,12 +124,8 @@ where
 
             // Used instead of Table::highlight_style so that it doesn't override the style of individual
             // cells; this is required since Utilization bars use both fg and bg colors to draw fractions.
-            if state.selected() == Some(idx) {
-                row = row.style(Style::default().bg(if state.focus() {
-                    Color::Blue
-                } else {
-                    Color::LightBlue
-                }));
+            if state.selected() == Some(idx) && state.focus() {
+                row = row.reversed();
             }
 
             rows.push(row);

@@ -1,7 +1,7 @@
 use std::iter::Sum;
 
 use ratatui::{
-    style::{Color, Style},
+    style::{Color, Style, Stylize},
     text::{Line, Span},
 };
 
@@ -121,5 +121,5 @@ impl Sum for Utilization {
 }
 
 fn style(fg: Color, bg: Color) -> Style {
-    Style::default().fg(fg).bg(bg)
+    Style::new().reset().fg(fg).bg(bg)
 }
