@@ -11,5 +11,8 @@ argh = "0.1.13"
 color-eyre = "0.6.5"
 crossterm = "0.29.0"
 csv = "1.3.1"
-ratatui = { version = "0.29.0", features = ["unstable-widget-ref"] }
+ratatui = { version = "0.30", features = [
+    "unstable-widget-ref",
+    "crossterm_0_29",
+] }
 serde = { version = "1.0.219", features = ["derive"] }

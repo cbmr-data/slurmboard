@@ -5,7 +5,7 @@ use ratatui::{
     layout::{Constraint, Rect},
     style::Stylize,
     text::Text,
-    widgets::{Row, StatefulWidgetRef, Table, TableState},
+    widgets::{Row, StatefulWidget, StatefulWidgetRef, Table, TableState},
 };
 
 use super::{misc::COLUMN_SPACING, RightScrollbar};
@@ -137,7 +137,7 @@ where
                 state.columns().iter().map(C::to_string).collect::<Vec<_>>(),
             ));
 
-        StatefulWidgetRef::render_ref(&table, area, buf, state.inner_state());
+        table.render(area, buf, state.inner_state());
     }
 }
 

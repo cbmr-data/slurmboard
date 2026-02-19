@@ -1,6 +1,7 @@
 use color_eyre::Result;
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
+use std::error::Error;
 use std::io;
 
 use slurmboard::app::App;
@@ -10,7 +11,7 @@ use slurmboard::handler::{handle_key_events, handle_mouse_events};
 use slurmboard::tui::Tui;
 use slurmboard::ui::UI;
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args: Args = argh::from_env();
     if args.version {
         println!("slurmboard v{}", env!("CARGO_PKG_VERSION"));
