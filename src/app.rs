@@ -13,7 +13,7 @@ pub struct App {
     /// Command-line args
     pub args: Args,
     /// Slurm nodes organized by partition
-    pub cluster: Rc<Vec<Partition>>,
+    pub cluster: Vec<Rc<Partition>>,
     /// Time since last automatic update
     last_update: Instant,
 }
@@ -21,12 +21,12 @@ pub struct App {
 impl App {
     /// Constructs a new instance of [`App`].
     pub fn new(args: Args) -> Result<Self> {
-        let partitions = Slurm::collect(&args.sinfo, &args.squeue)?;
+        let cluster = Slurm::collect(&args.sinfo, &args.squeue)?;
 
         Ok(Self {
             args,
             running: true,
-            cluster: Rc::new(partitions),
+            cluster,
             last_update: Instant::now(),
         })
     }
@@ -45,7 +45,7 @@ impl App {
         // A minimum refresh rate is enforced to prevent the user just holding `r`
         let update_rate = Duration::from_secs(interval.max(1));
         if self.last_update.elapsed() >= update_rate {
-            self.cluster = Rc::new(Slurm::collect(&self.args.sinfo, &self.args.squeue)?);
+            self.cluster = Slurm::collect(&self.args.sinfo, &self.args.squeue)?;
             self.last_update = Instant::now();
 
             return Ok(true);

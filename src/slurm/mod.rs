@@ -3,6 +3,8 @@ mod misc;
 mod nodes;
 mod partitions;
 
+use std::{collections::HashMap, rc::Rc};
+
 pub use jobs::{Job, JobState};
 pub use nodes::{CPUState, Node, NodeState};
 pub use partitions::Partition;
@@ -17,57 +19,51 @@ pub enum Identifier {
 pub struct Slurm {}
 
 impl Slurm {
-    pub fn collect(sinfo: &str, squeue: &str) -> Result<Vec<Partition>> {
-        let partitions = Slurm::collect_partitions(sinfo)?;
+    pub fn collect(sinfo: &str, squeue: &str) -> Result<Vec<Rc<Partition>>> {
+        let mut jobs = Slurm::collect_jobs(squeue)?;
 
-        Slurm::collect_jobs(squeue, partitions)
-    }
+        let mut partitions: HashMap<String, Vec<Rc<Node>>> = HashMap::new();
+        for mut node in Node::collect(sinfo)? {
+            node.jobs = jobs.remove(&node.name).unwrap_or_default();
 
-    fn collect_partitions(sinfo: &str) -> Result<Vec<Partition>> {
-        let mut nodes = Node::collect(sinfo)?;
-        nodes.sort_by_key(|v| (v.partition.to_string(), v.name.clone()));
+            partitions
+                .entry(node.partition.label.clone())
+                .or_default()
+                .push(Rc::new(node));
+        }
 
-        let mut partitions: Vec<Partition> = Vec::new();
-        for node in nodes {
-            if let Some(partition) = partitions.last_mut() {
-                if partition.name.same(&node.partition) {
-                    partition.nodes.push(node.clone());
-                    continue;
-                }
+        let mut cluster: Vec<Rc<Partition>> = Vec::new();
+        for (_, nodes) in partitions.drain() {
+            assert!(!nodes.is_empty());
+
+            let mut jobs = Vec::new();
+            for node in &nodes {
+                jobs.extend_from_slice(&node.jobs);
             }
 
-            partitions.push(Partition {
-                name: node.partition.clone(),
-                nodes: vec![node.clone()],
-                jobs: Vec::new(),
-            });
+            cluster.push(Rc::new(Partition {
+                name: nodes[0].partition.clone(),
+                jobs: jobs,
+                nodes: nodes,
+            }));
         }
 
         // Sort by descending number of nodes
-        partitions.sort_by_key(|v| -(v.nodes.len() as isize));
-        Ok(partitions)
+        cluster.sort_by_key(|v| -(v.nodes.len() as isize));
+        Ok(cluster)
     }
 
-    fn collect_jobs(squeue: &str, mut partitions: Vec<Partition>) -> Result<Vec<Partition>> {
+    fn collect_jobs(squeue: &str) -> Result<HashMap<String, Vec<Rc<Job>>>> {
         // FIXME: Warn on unassigned jobs
+        let mut nodes: HashMap<String, Vec<Rc<Job>>> = HashMap::new();
         for job in Job::collect(squeue)? {
-            for partition in &mut partitions {
-                if partition.name.same(&job.partition) {
-                    partition.jobs.push(job.clone());
+            let job = Rc::new(job);
 
-                    if !job.nodelist.is_empty() {
-                        for node in &mut partition.nodes {
-                            if job.nodelist.contains(&node.name) {
-                                node.jobs.push(job.clone());
-                            }
-                        }
-                    }
-
-                    break;
-                }
+            for node in &job.nodelist {
+                nodes.entry(node.clone()).or_default().push(job.clone());
             }
         }
 
-        Ok(partitions)
+        Ok(nodes)
     }
 }

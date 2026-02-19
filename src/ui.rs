@@ -134,12 +134,12 @@ impl UI {
     fn scroll_node_selection(&mut self, delta: isize) {
         match self.node_state.scroll(delta) {
             Some(Selection::Partition(partition)) => {
-                self.job_state.update(&partition.jobs);
+                self.job_state.update(partition.jobs.clone());
             }
             Some(Selection::Node(node)) => {
-                self.job_state.update(&node.jobs);
+                self.job_state.update(node.jobs.clone());
             }
-            _ => self.job_state.update(&[]),
+            _ => self.job_state.update(Vec::new()),
         }
     }
 

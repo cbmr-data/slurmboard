@@ -55,7 +55,7 @@ pub struct NodeTableState {
     /// Visible columns
     columns: Vec<Column>,
     table: TableState,
-    cluster: Rc<Vec<Partition>>,
+    cluster: Vec<Rc<Partition>>,
     /// Rows of nodes/partitions as indices into `cluster`, plus empty rows
     rows: Vec<NodeRow>,
 
@@ -158,8 +158,8 @@ impl NodeTableState {
         self.update_selections();
     }
 
-    pub fn update(&mut self, cluster: Rc<Vec<Partition>>) {
-        self.cluster = cluster.clone();
+    pub fn update(&mut self, cluster: Vec<Rc<Partition>>) {
+        self.cluster = cluster;
         self.update_selections();
     }
 
@@ -287,7 +287,7 @@ impl Default for NodeTableState {
                 Column::GPUs,
             ],
             table: TableState::default(),
-            cluster: Rc::default(),
+            cluster: Vec::default(),
             rows: Vec::default(),
             def_mem_per_cpu: 0,
         }

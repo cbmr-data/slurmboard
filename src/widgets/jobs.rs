@@ -1,4 +1,4 @@
-use std::{cmp::Reverse, fmt::Debug};
+use std::{cmp::Reverse, fmt::Debug, rc::Rc};
 
 use ratatui::{
     buffer::Buffer,
@@ -43,7 +43,7 @@ impl std::fmt::Display for Column {
 pub struct JobTableState {
     focus: bool,
     table: TableState,
-    jobs: Vec<Job>,
+    jobs: Vec<Rc<Job>>,
     columns: Vec<Column>,
 }
 
@@ -52,9 +52,8 @@ impl JobTableState {
         self.focus = focus;
     }
 
-    pub fn update(&mut self, jobs: &[Job]) {
-        self.jobs.clear();
-        self.jobs.extend_from_slice(jobs);
+    pub fn update(&mut self, jobs: Vec<Rc<Job>>) {
+        self.jobs = jobs;
         self.jobs.sort_unstable_by_key(|j| Reverse(j.time.clone()));
 
         // Update/clear job selection depending on the new contents

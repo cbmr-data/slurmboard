@@ -1,5 +1,6 @@
 use std::fmt;
 use std::process::Command;
+use std::rc::Rc;
 use std::str::{FromStr, Split};
 
 use color_eyre::eyre::Context;
@@ -228,7 +229,7 @@ pub struct Node {
     gres_used: String,
 
     #[serde(skip)]
-    pub jobs: Vec<Job>,
+    pub jobs: Vec<Rc<Job>>,
 }
 
 impl Node {
