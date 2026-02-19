@@ -43,8 +43,8 @@ impl Slurm {
 
             cluster.push(Rc::new(Partition {
                 name: nodes[0].partition.clone(),
-                jobs: jobs,
-                nodes: nodes,
+                jobs,
+                nodes,
             }));
         }
 
