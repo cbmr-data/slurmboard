@@ -1,0 +1,43 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # v6.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/codespell-project/codespell
+    rev: 63c8f8312b7559622c0d82815639671ae42132ac # v2.4.1
+    hooks:
+      - id: codespell
+        args:
+          [
+            "--builtin",
+            "clear,rare,informal,code,names",
+            "--ignore-words-list",
+            "crate,mut,ratatui",
+          ]
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        language: system
+        types: [file, rust]
+        entry: cargo fmt -- --check
+        pass_filenames: false
+      # Catches errors, not warnings
+      - id: cargo-check
+        name: cargo check
+        language: system
+        types: [file, rust]
+        entry: cargo check
+        pass_filenames: false
+      - id: cargo-clippy
+        name: cargo clippy
+        language: system
+        types: [file, rust]
+        entry: cargo clippy -- -Dclippy::all
+        pass_filenames: false
