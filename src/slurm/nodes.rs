@@ -297,7 +297,7 @@ impl Node {
         let cpu_utilization = self.cpu_utilization(mem_per_cpu);
 
         // GPUs are considered blocked if there are no available CPUs assuming default RAM allocations
-        let blocked = if cpu_utilization.available() < 1.0 {
+        let blocked = if cpu_utilization.available() >= 1.0 {
             self.gpus - self.gpus_used
         } else {
             0
