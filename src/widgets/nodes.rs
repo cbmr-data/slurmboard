@@ -106,7 +106,7 @@ impl NodeTableState {
         self.focus = focus;
     }
 
-    pub fn scroll(&mut self, delta: isize) -> Option<Selection> {
+    pub fn scroll(&mut self, delta: isize) -> Option<Selection<'_>> {
         // Skip across across spacing elements
         while let Some(idx) = scroll(&mut self.table, self.rows.len(), delta) {
             if !matches!(self.rows[idx], NodeRow::Spacing)
@@ -121,7 +121,7 @@ impl NodeTableState {
         self.selected()
     }
 
-    pub fn selected(&self) -> Option<Selection> {
+    pub fn selected(&self) -> Option<Selection<'_>> {
         if let Some(idx) = self.table.selected() {
             match &self.rows[idx] {
                 NodeRow::Partition(partition) => Some(Selection::Partition(partition.clone())),
