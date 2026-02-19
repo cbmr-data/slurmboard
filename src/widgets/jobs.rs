@@ -53,11 +53,26 @@ impl JobTableState {
     }
 
     pub fn update(&mut self, jobs: Vec<Rc<Job>>) {
+        let selected = self.selected().map(|i| self.jobs[i].clone());
+
         self.jobs = jobs;
         self.jobs.sort_unstable_by_key(|j| Reverse(j.time.clone()));
 
         // Update/clear job selection depending on the new contents
-        self.scroll(0);
+        let selected = if self.jobs.is_empty() {
+            None
+        } else if let Some(job) = selected {
+            self.jobs
+                .iter()
+                .enumerate()
+                .find(|v| v.1.id == job.id)
+                .map(|v| v.0)
+                .or(Some(0))
+        } else {
+            Some(0)
+        };
+
+        self.table.select(selected);
     }
 
     pub fn scroll(&mut self, delta: isize) {

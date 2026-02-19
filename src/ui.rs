@@ -71,7 +71,6 @@ impl UI {
                 Focus::Jobs => {
                     self.job_state
                         .click(row.saturating_sub(self.node_layout.height) as usize);
-                    self.scroll_node_selection(0)
                 }
             }
         }
@@ -97,6 +96,7 @@ impl UI {
 
     pub fn toggle_unavailable(&mut self) {
         self.node_state.toggle_unavailable();
+        self.scroll_node_selection(0)
     }
 
     pub fn render(&mut self, area: Rect, buf: &mut Buffer) {

@@ -20,7 +20,7 @@ use super::{
 pub enum NodeRow {
     Spacing,
     Partition(Rc<Partition>),
-    Node(Rc<Node>, bool),
+    Node(Rc<Node>),
 }
 
 #[derive(Clone, Debug)]
@@ -87,7 +87,12 @@ impl GenericTableState<Column> for NodeTableState {
     fn text<'a>(&self, constraint: &Constraint, row: usize, column: Column) -> Text<'a> {
         match &self.rows[row] {
             NodeRow::Partition(partition) => self.partition_text(partition, constraint, column),
-            NodeRow::Node(node, last) => self.node_text(node, constraint, column, *last),
+            NodeRow::Node(node) => {
+                let last = row + 1 == self.rows.len()
+                    || matches!(self.rows[row + 1], NodeRow::Partition(_));
+
+                self.node_text(node, constraint, column, last)
+            }
             NodeRow::Spacing => Text::default(),
         }
     }
@@ -123,11 +128,11 @@ impl NodeTableState {
         self.selected()
     }
 
-    pub fn selected(&self) -> Option<Selection<'_>> {
+    pub fn selected(&self) -> Option<Selection> {
         if let Some(idx) = self.table.selected() {
             match &self.rows[idx] {
                 NodeRow::Partition(partition) => Some(Selection::Partition(partition.clone())),
-                NodeRow::Node(node, _) => Some(Selection::Node(node.clone())),
+                NodeRow::Node(node) => Some(Selection::Node(node.clone())),
                 NodeRow::Spacing => None,
             }
         } else {
@@ -145,27 +150,28 @@ impl NodeTableState {
     }
 
     pub fn toggle_unavailable(&mut self) {
+        let selection = self.selected();
         self.hide_unavailable = !self.hide_unavailable;
-        self.update_selections();
+        self.update_table();
+        self.select(selection)
     }
 
     pub fn update(&mut self, cluster: Vec<Rc<Partition>>) {
+        let selection = self.selected();
         self.cluster = cluster;
-        self.update_selections();
+        self.update_table();
+        self.select(selection)
     }
 
-    fn update_selections(&mut self) {
+    fn update_table(&mut self) {
         self.rows.clear();
 
         for partition in &self.cluster {
             self.rows.push(NodeRow::Partition(partition.clone()));
 
-            for (n_idx, node) in partition.nodes.iter().enumerate() {
+            for node in &partition.nodes {
                 if !self.hide_unavailable || node.state.is_available() {
-                    self.rows.push(NodeRow::Node(
-                        node.clone(),
-                        n_idx + 1 == partition.nodes.len(),
-                    ));
+                    self.rows.push(NodeRow::Node(node.clone()));
                 }
             }
 
@@ -174,6 +180,45 @@ impl NodeTableState {
 
         // Remove trailing spacing
         self.rows.pop();
+    }
+
+    fn select(&mut self, selection: Option<Selection>) {
+        if let Some(selection) = selection {
+            for (idx, candidate) in self.rows.iter().enumerate() {
+                match (&selection, candidate) {
+                    (Selection::Node(selection), NodeRow::Node(candidate)) => {
+                        if selection.name == candidate.name {
+                            self.table.select(Some(idx));
+                            return;
+                        }
+                    }
+                    (Selection::Partition(selection), NodeRow::Partition(candidate)) => {
+                        if selection.name.same(&candidate.name) {
+                            self.table.select(Some(idx));
+                            return;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            // Fall back to selecting the same partition
+            let partition = match &selection {
+                Selection::Node(selection) => &selection.partition,
+                Selection::Partition(selection) => &selection.name,
+            };
+
+            for (idx, candidate) in self.rows.iter().enumerate() {
+                if let NodeRow::Partition(candidate) = candidate {
+                    if candidate.name.same(partition) {
+                        self.table.select(Some(idx));
+                        return;
+                    }
+                }
+            }
+        }
+
+        self.table.select(None)
     }
 
     pub fn height(&self) -> u16 {
