@@ -75,17 +75,15 @@ impl JobTableState {
             self.sort_column = delta as usize;
         }
 
-        let selected = self.selected().map(|i| self.jobs[i].clone());
+        self.select(None);
         self.sort();
-        self.select(selected);
     }
 
     pub fn toggle_sort_order(&mut self) {
         self.sort_order = self.sort_order.toggle();
 
-        let selected = self.selected().map(|i| self.jobs[i].clone());
+        self.select(None);
         self.sort();
-        self.select(selected);
     }
 
     fn sort(&mut self) {
