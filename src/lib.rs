@@ -12,5 +12,7 @@ pub mod slurm;
 pub mod tui;
 /// Widget renderer
 pub mod ui;
+/// Utility functions
+pub mod utilities;
 /// Custom widgets
 pub mod widgets;
