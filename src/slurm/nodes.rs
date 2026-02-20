@@ -250,9 +250,10 @@ impl Node {
         // explicitly requests less RAM per CPU for a job.
         let blocked = if mem_per_cpu > 0 {
             let free_mem = self.mem - self.mem_alloc;
+            let unblocked_cpus = free_mem / mem_per_cpu as usize;
 
-            // The amount of RAM available may be greater than mem_per_cpu * self.cpus
-            self.cpus.saturating_sub(free_mem / mem_per_cpu as usize) as f64
+            // The amount of RAM available may be greater than mem_per_cpu * idle_cpus
+            self.cpu_state.idle.saturating_sub(unblocked_cpus) as f64
         } else {
             0.0
         };
@@ -260,7 +261,7 @@ impl Node {
         Utilization {
             utilized,
             allocated: self.cpu_state.allocated as f64,
-            blocked: blocked.max(self.cpu_state.allocated as f64),
+            blocked,
             unavailable: self.cpu_state.other as f64,
             capacity: self.cpu_state.total as f64,
         }
@@ -275,14 +276,14 @@ impl Node {
             .min(self.mem_alloc) as f64;
 
         // Memory is considered "blocked" if there are no CPUs available for allocation
-        let (blocked, unavailable) =
-            if self.cpu_state.allocated + self.cpu_state.other < self.cpu_state.total {
-                (self.mem_alloc as f64, 0.0)
-            } else if self.cpu_state.total.saturating_sub(self.cpu_state.other) > 0 {
-                (self.mem as f64, 0.0)
-            } else {
-                (0.0, self.mem.saturating_sub(self.mem_alloc) as f64)
-            };
+        let free_mem = (self.mem - self.mem_alloc) as f64;
+        let (blocked, unavailable) = if self.cpu_state.idle > 0 {
+            (0.0, 0.0)
+        } else if self.cpu_state.allocated > 0 {
+            (free_mem, 0.0)
+        } else {
+            (0.0, free_mem)
+        };
 
         Utilization {
             utilized,
@@ -297,7 +298,7 @@ impl Node {
         let cpu_utilization = self.cpu_utilization(mem_per_cpu);
 
         // GPUs are considered blocked if there are no available CPUs assuming default RAM allocations
-        let blocked = if cpu_utilization.available() >= 1.0 {
+        let blocked = if cpu_utilization.available() < 1.0 {
             self.gpus - self.gpus_used
         } else {
             0

@@ -26,11 +26,12 @@ pub struct Utilization {
 
 impl Utilization {
     pub fn available(&self) -> f64 {
+        assert!(self.allocated + self.blocked + self.unavailable <= self.capacity);
         self.capacity - (self.allocated + self.blocked + self.unavailable)
     }
 
     pub fn to_line<'a>(self, length: u16) -> Line<'a> {
-        assert!(self.allocated + self.unavailable <= self.capacity);
+        assert!(self.allocated + self.blocked + self.unavailable <= self.capacity);
 
         let mut spans = Vec::new();
         if length > 0 && self.capacity > 0.0 {
@@ -38,19 +39,19 @@ impl Utilization {
             let mut chars = 0usize;
 
             // CPUs available to the user
-            let available = self.capacity - self.unavailable;
+            let available = self.capacity - self.allocated - self.blocked - self.unavailable;
             // List of segments by their end-point and their colors
             let segments = [
                 // Utilization may spike above resources available to users/Slurm,
                 // but it doesn't make sense to show utilization beyond the resources
                 // actually available to the users
-                (self.utilized.min(available), Color::Green),
+                (self.utilized.min(self.allocated), Color::Green),
                 // Allocated but unutilized resources
                 (self.allocated, Color::Yellow),
                 // Resources blocked to to allocation of linked resources
-                (self.blocked, Color::LightMagenta),
+                (self.allocated + self.blocked, Color::LightMagenta),
                 // Unblocked, unallocated resources
-                (available, Color::DarkGray),
+                (self.allocated + self.blocked + available, Color::DarkGray),
                 // Unavailable resources
                 (self.capacity, Color::Black),
             ];
