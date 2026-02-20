@@ -313,11 +313,11 @@ impl Node {
         }
     }
 
-    pub fn collect(exe: &str) -> Result<Vec<Node>> {
-        let output = Command::new(exe)
+    pub fn collect() -> Result<Vec<Node>> {
+        let output = Command::new("sinfo")
             .args(["-N", "--Format", &sinfo_format()])
             .output()
-            .wrap_err("failed to execute squeue")?;
+            .wrap_err("failed to execute `sinfo`")?;
 
         // TODO: check output.status
         Self::parse(std::io::Cursor::new(output.stdout))

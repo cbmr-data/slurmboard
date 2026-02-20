@@ -195,12 +195,12 @@ pub struct Job {
 }
 
 impl Job {
-    pub fn collect(exe: &str) -> Result<Vec<Job>> {
+    pub fn collect() -> Result<Vec<Job>> {
         // FIXME: Generate parameters on demand
-        let output = Command::new(exe)
+        let output = Command::new("squeue")
             .args(["--Format", &squeue_format()])
             .output()
-            .wrap_err_with(|| format!("failed to execute {:?}", exe))?;
+            .wrap_err_with(|| "failed to execute `squeue`")?;
 
         if !output.status.success() {
             panic!("{:?}", std::str::from_utf8(&output.stderr));

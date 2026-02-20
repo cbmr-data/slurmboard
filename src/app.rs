@@ -21,7 +21,7 @@ pub struct App {
 impl App {
     /// Constructs a new instance of [`App`].
     pub fn new(args: Args) -> Result<Self> {
-        let cluster = Slurm::collect(&args.sinfo, &args.squeue)?;
+        let cluster = Slurm::collect()?;
 
         Ok(Self {
             args,
@@ -45,7 +45,7 @@ impl App {
         // A minimum refresh rate is enforced to prevent the user just holding `r`
         let update_rate = Duration::from_secs(interval.max(1));
         if self.last_update.elapsed() >= update_rate {
-            self.cluster = Slurm::collect(&self.args.sinfo, &self.args.squeue)?;
+            self.cluster = Slurm::collect()?;
             self.last_update = Instant::now();
 
             return Ok(true);

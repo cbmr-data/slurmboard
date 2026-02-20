@@ -11,14 +11,6 @@ pub struct Args {
     #[argh(option, default = "5")]
     pub interval: u64,
 
-    /// location of `sinfo` executable
-    #[argh(option, default = "\"sinfo\".to_string()")]
-    pub sinfo: String,
-
-    /// location of `squeue` executable
-    #[argh(option, default = "\"squeue\".to_string()")]
-    pub squeue: String,
-
     /// print version information
     #[argh(switch, short = 'v')]
     pub version: bool,

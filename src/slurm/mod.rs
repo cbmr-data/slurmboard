@@ -19,11 +19,11 @@ pub enum Identifier {
 pub struct Slurm {}
 
 impl Slurm {
-    pub fn collect(sinfo: &str, squeue: &str) -> Result<Vec<Rc<Partition>>> {
-        let mut jobs = Slurm::collect_jobs(squeue)?;
+    pub fn collect() -> Result<Vec<Rc<Partition>>> {
+        let mut jobs = Slurm::collect_jobs()?;
 
         let mut partitions: HashMap<String, Vec<Rc<Node>>> = HashMap::new();
-        for mut node in Node::collect(sinfo)? {
+        for mut node in Node::collect()? {
             node.jobs = jobs.remove(&node.name).unwrap_or_default();
 
             partitions
@@ -53,10 +53,10 @@ impl Slurm {
         Ok(cluster)
     }
 
-    fn collect_jobs(squeue: &str) -> Result<HashMap<String, Vec<Rc<Job>>>> {
+    fn collect_jobs() -> Result<HashMap<String, Vec<Rc<Job>>>> {
         // FIXME: Warn on unassigned jobs
         let mut nodes: HashMap<String, Vec<Rc<Job>>> = HashMap::new();
-        for job in Job::collect(squeue)? {
+        for job in Job::collect()? {
             let job = Rc::new(job);
 
             for node in &job.nodelist {
