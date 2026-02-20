@@ -55,6 +55,14 @@ impl UI {
         }
     }
 
+    pub fn set_sort_column(&mut self, delta: isize) {
+        self.job_state.set_sort_column(delta);
+    }
+
+    pub fn toggle_sort_order(&mut self) {
+        self.job_state.toggle_sort_order();
+    }
+
     pub fn mouse_click(&mut self, row: u16) {
         if let Some(focus) = self.focus_at(row) {
             if self.focus != focus {
@@ -191,6 +199,8 @@ impl UI {
             "Hide/Show unavailable".into(),
             " <R> ".bold(),
             "Refresh".into(),
+            " <S> ".bold(),
+            "Sort order".into(),
             " <Q> ".bold(),
             "Quit ".into(),
         ])

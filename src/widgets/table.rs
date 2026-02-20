@@ -10,15 +10,36 @@ use ratatui::{
 
 use super::{misc::COLUMN_SPACING, RightScrollbar};
 
+/// User selected sort order of columns
+#[derive(Clone, Copy, Debug, Default)]
+pub enum SortOrder {
+    Ascending,
+    #[default]
+    Descending,
+}
+
+impl SortOrder {
+    pub fn toggle(self) -> SortOrder {
+        match self {
+            SortOrder::Ascending => SortOrder::Descending,
+            SortOrder::Descending => SortOrder::Ascending,
+        }
+    }
+}
+
 pub trait GenericTableState<C>
 where
-    C: Copy + Display + Sized,
+    C: Copy + Display + PartialEq + Sized,
 {
     fn focus(&self) -> bool;
 
     fn nrows(&self) -> usize;
-    // FIXME: Should return slice
+
     fn columns(&self) -> &[C];
+
+    fn sort_column(&self) -> Option<C>;
+
+    fn sort_order(&self) -> SortOrder;
 
     /// Returns the text object for a given row and column. The `constraint` value
     /// will either be a constant
@@ -35,7 +56,7 @@ where
 #[derive(Debug, Default)]
 pub struct GenericTable<C, S>
 where
-    C: Copy + Display + Sized,
+    C: Copy + Display + PartialEq + Sized,
     S: GenericTableState<C>,
 {
     c: PhantomData<C>,
@@ -44,7 +65,7 @@ where
 
 impl<C, S> GenericTable<C, S>
 where
-    C: Copy + Display + Sized,
+    C: Copy + Display + PartialEq + Sized,
     S: GenericTableState<C>,
 {
     pub fn new() -> Self {
@@ -54,13 +75,17 @@ where
         }
     }
 
-    fn width(state: &S, column: C) -> Option<Constraint> {
+    fn width(state: &S, column: C, sort_column: bool) -> Option<Constraint> {
         if state.variable_width(column) {
             None
         } else {
             // Dummy value
             let constraint = Constraint::Length(32);
             let mut width = column.to_string().chars().count();
+            if sort_column {
+                width += 2;
+            }
+
             for row in 0..state.nrows() {
                 width = state.text(&constraint, row, column).width().max(width);
             }
@@ -70,10 +95,11 @@ where
     }
 
     fn constraints(state: &S, area: Rect) -> Vec<Constraint> {
+        let sort_column = state.sort_column();
         let widths = state
             .columns()
             .iter()
-            .map(|c| Self::width(state, *c))
+            .map(|c| Self::width(state, *c, sort_column == Some(*c)))
             .collect::<Vec<_>>();
 
         let variable_length_columns = widths.iter().filter(|v| v.is_none()).count() as u16;
@@ -96,7 +122,7 @@ where
 
 impl<C, S> StatefulWidgetRef for GenericTable<C, S>
 where
-    C: Copy + Display + Sized,
+    C: Copy + Display + PartialEq + Sized,
     S: GenericTableState<C>,
 {
     type State = S;
@@ -131,11 +157,25 @@ where
             rows.push(row);
         }
 
+        let sort_column = state.sort_column();
+        let mut columns = Vec::new();
+        for column in state.columns() {
+            if Some(*column) == sort_column {
+                let mut label = column.to_string();
+                match state.sort_order() {
+                    SortOrder::Ascending => label.push_str(" ▲"),
+                    SortOrder::Descending => label.push_str(" ▼"),
+                }
+
+                columns.push(label);
+            } else {
+                columns.push(column.to_string());
+            }
+        }
+
         let table = Table::new(rows, constraints)
             .column_spacing(COLUMN_SPACING)
-            .header(Row::new(
-                state.columns().iter().map(C::to_string).collect::<Vec<_>>(),
-            ));
+            .header(Row::new(columns));
 
         table.render(area, buf, state.inner_state());
     }

@@ -39,6 +39,12 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App, ui: &mut UI) -> Res
         KeyCode::Down => ui.scroll(1),
         KeyCode::PageDown => ui.scroll(10),
         KeyCode::End => ui.scroll(isize::MAX),
+        // Sorting
+        KeyCode::Left => ui.set_sort_column(-1),
+        KeyCode::Right => ui.set_sort_column(1),
+        KeyCode::Char('s') | KeyCode::Char('S') => {
+            ui.toggle_sort_order();
+        }
         // Switch focus between nodes / jobs
         KeyCode::Tab | KeyCode::BackTab => ui.toggle_focus(),
         _ => processed = false,

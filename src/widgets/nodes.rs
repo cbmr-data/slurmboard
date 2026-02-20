@@ -8,8 +8,11 @@ use ratatui::{
     widgets::{StatefulWidgetRef, TableState},
 };
 
-use crate::slurm::{Node, NodeState, Partition};
 use crate::widgets::{misc::scroll, Utilization};
+use crate::{
+    slurm::{Node, NodeState, Partition},
+    widgets::table::SortOrder,
+};
 
 use super::{
     misc::right_align_text,
@@ -29,7 +32,7 @@ pub enum Selection {
     Node(Rc<Node>),
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Column {
     Node,
     State,
@@ -74,6 +77,14 @@ impl GenericTableState<Column> for NodeTableState {
 
     fn columns(&self) -> &[Column] {
         &self.columns
+    }
+
+    fn sort_column(&self) -> Option<Column> {
+        None
+    }
+
+    fn sort_order(&self) -> SortOrder {
+        SortOrder::default()
     }
 
     fn selected(&self) -> Option<usize> {

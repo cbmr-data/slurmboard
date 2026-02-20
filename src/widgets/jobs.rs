@@ -1,4 +1,4 @@
-use std::{cmp::Reverse, fmt::Debug, rc::Rc};
+use std::{fmt::Debug, rc::Rc};
 
 use ratatui::{
     buffer::Buffer,
@@ -9,15 +9,18 @@ use ratatui::{
     widgets::{Block, Borders, StatefulWidgetRef, TableState, Widget},
 };
 
-use crate::slurm::{Job, JobState};
 use crate::widgets::misc::scroll;
+use crate::{
+    slurm::{Job, JobState},
+    widgets::table::SortOrder,
+};
 
 use super::{
     misc::{center_layout, mb_to_string, right_align_text},
     table::{GenericTable, GenericTableState},
 };
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum Column {
     JobID,
     JobArray,
@@ -45,6 +48,8 @@ pub struct JobTableState {
     table: TableState,
     jobs: Vec<Rc<Job>>,
     columns: Vec<Column>,
+    sort_column: usize,
+    sort_order: SortOrder,
 }
 
 impl JobTableState {
@@ -56,12 +61,61 @@ impl JobTableState {
         let selected = self.selected().map(|i| self.jobs[i].clone());
 
         self.jobs = jobs;
-        self.jobs.sort_unstable_by_key(|j| Reverse(j.time.clone()));
+        self.sort();
+        self.select(selected);
+    }
 
+    pub fn set_sort_column(&mut self, mut delta: isize) {
+        delta = delta.saturating_add(self.sort_column as isize);
+        if delta < 0 {
+            self.sort_column = self.columns.len() - 1;
+        } else if delta >= self.columns.len() as isize {
+            self.sort_column = 0;
+        } else {
+            self.sort_column = delta as usize;
+        }
+
+        let selected = self.selected().map(|i| self.jobs[i].clone());
+        self.sort();
+        self.select(selected);
+    }
+
+    pub fn toggle_sort_order(&mut self) {
+        self.sort_order = self.sort_order.toggle();
+
+        let selected = self.selected().map(|i| self.jobs[i].clone());
+        self.sort();
+        self.select(selected);
+    }
+
+    fn sort(&mut self) {
+        let cmp: fn(&Rc<Job>, &Rc<Job>) -> std::cmp::Ordering = match self.columns[self.sort_column]
+        {
+            Column::JobID => |a, b| a.id.cmp(&b.id),
+            Column::JobArray => |a, b| a.array_job_id.cmp(&b.array_job_id),
+            Column::User => |a, b| a.user.cmp(&b.user),
+            Column::State => |a, b| a.state.cmp(&b.state),
+            Column::Runtime => |a, b| a.time.cmp(&b.time),
+            Column::Nodes => |a, b| a.nodes.cmp(&b.nodes),
+            Column::Tasks => |a, b| a.tasks.cmp(&b.tasks),
+            Column::CPUs => |a, b| a.cpus.cmp(&b.cpus),
+            Column::GPUs => |a, b| a.gpus.cmp(&b.gpus),
+            Column::Memory => |a, b| a.mem.cmp(&b.mem),
+            Column::Nodelist => |a, b| a.nodelist.cmp(&b.nodelist),
+            Column::Name => |a, b| a.name.cmp(&b.name),
+        };
+
+        match self.sort_order {
+            SortOrder::Ascending => self.jobs.sort_by(cmp),
+            SortOrder::Descending => self.jobs.sort_by(|a, b| cmp(a, b).reverse()),
+        }
+    }
+
+    fn select(&mut self, job: Option<Rc<Job>>) {
         // Update/clear job selection depending on the new contents
         let selected = if self.jobs.is_empty() {
             None
-        } else if let Some(job) = selected {
+        } else if let Some(job) = job {
             self.jobs
                 .iter()
                 .enumerate()
@@ -105,6 +159,8 @@ impl Default for JobTableState {
             ],
             table: TableState::default(),
             jobs: Vec::default(),
+            sort_column: 4,
+            sort_order: SortOrder::default(),
         }
     }
 }
@@ -120,6 +176,14 @@ impl GenericTableState<Column> for JobTableState {
 
     fn columns(&self) -> &[Column] {
         &self.columns
+    }
+
+    fn sort_column(&self) -> Option<Column> {
+        Some(self.columns[self.sort_column])
+    }
+
+    fn sort_order(&self) -> SortOrder {
+        self.sort_order
     }
 
     fn selected(&self) -> Option<usize> {
