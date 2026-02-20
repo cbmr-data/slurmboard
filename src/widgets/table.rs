@@ -42,7 +42,7 @@ where
     fn sort_order(&self) -> SortOrder;
 
     /// Returns the text object for a given row and column. The `constraint` value
-    /// will either be a constant
+    /// is a suggestion, intended for columns with variable width content
     fn text<'a>(&self, constraint: &Constraint, row: usize, column: C) -> Text<'a>;
     /// Returns true if a column should grow to consume available space
     fn variable_width(&self, column: C) -> bool;

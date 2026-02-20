@@ -61,6 +61,9 @@ pub struct NodeTableState {
     cluster: Vec<Rc<Partition>>,
     /// Rows of nodes/partitions as indices into `cluster`, plus empty rows
     rows: Vec<NodeRow>,
+
+    /// Total number of GPUs
+    gpus: usize,
 }
 
 impl GenericTableState<Column> for NodeTableState {
@@ -73,7 +76,11 @@ impl GenericTableState<Column> for NodeTableState {
     }
 
     fn columns(&self) -> &[Column] {
-        &self.columns
+        if self.gpus > 0 {
+            &self.columns
+        } else {
+            &self.columns[..self.columns.len() - 1]
+        }
     }
 
     fn sort_column(&self) -> Option<Column> {
@@ -164,7 +171,14 @@ impl NodeTableState {
         let selection = self.selected();
         self.cluster = cluster;
         self.update_table();
-        self.select(selection)
+        self.select(selection);
+
+        self.gpus = 0;
+        for partition in &self.cluster {
+            for node in &partition.nodes {
+                self.gpus += node.gpus;
+            }
+        }
     }
 
     fn update_table(&mut self) {
@@ -281,7 +295,7 @@ impl NodeTableState {
                     gpus
                 })
                 .sum::<Utilization>()
-                .to_line(constraint_length(*constraint))
+                .to_line(gpu_column_width(self.gpus))
                 .into(),
         }
     }
@@ -309,7 +323,7 @@ impl NodeTableState {
                 .into(),
             Column::GPUs => node
                 .gpu_utilization()
-                .to_line(constraint_length(*constraint))
+                .to_line(gpu_column_width(self.gpus))
                 .into(),
         }
     }
@@ -332,6 +346,7 @@ impl Default for NodeTableState {
             table: TableState::default(),
             cluster: Vec::default(),
             rows: Vec::default(),
+            gpus: 0,
         }
     }
 }
@@ -371,4 +386,9 @@ fn constraint_length(c: Constraint) -> u16 {
         Constraint::Min(v) | Constraint::Max(v) | Constraint::Length(v) => v,
         _ => unimplemented!(),
     }
+}
+
+// Returns a width
+fn gpu_column_width(gpus: usize) -> u16 {
+    gpus.clamp(16, 32) as u16
 }
