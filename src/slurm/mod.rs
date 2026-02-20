@@ -1,3 +1,4 @@
+mod config;
 mod jobs;
 mod misc;
 mod nodes;
@@ -5,6 +6,7 @@ mod partitions;
 
 use std::{collections::HashMap, rc::Rc};
 
+pub use config::{DefaultMem, PartitionConfig, SlurmConfig};
 pub use jobs::{Job, JobState};
 pub use nodes::{CPUState, Node, NodeState};
 pub use partitions::Partition;
@@ -19,12 +21,23 @@ pub enum Identifier {
 pub struct Slurm {}
 
 impl Slurm {
-    pub fn collect() -> Result<Vec<Rc<Partition>>> {
+    pub fn config() -> Result<SlurmConfig> {
+        SlurmConfig::collect()
+    }
+
+    pub fn collect(config: &SlurmConfig) -> Result<Vec<Rc<Partition>>> {
         let mut jobs = Slurm::collect_jobs()?;
 
         let mut partitions: HashMap<String, Vec<Rc<Node>>> = HashMap::new();
         for mut node in Node::collect()? {
             node.jobs = jobs.remove(&node.name).unwrap_or_default();
+
+            node.default_mem = config.default_mem;
+            if let Some(partition) = config.partitions.get(&node.partition.label) {
+                if partition.default_mem != DefaultMem::Unlimited {
+                    node.default_mem = partition.default_mem;
+                }
+            }
 
             partitions
                 .entry(node.partition.label.clone())

@@ -34,8 +34,6 @@ pub struct UI {
 impl UI {
     pub fn new(app: &App) -> Self {
         let mut ui = Self::default();
-        // Set the amount of memory allocated per CPU by default
-        ui.node_state.set_def_mem_per_cpu(app.args.def_mem_per_cpu);
         // Set initial focus on node list
         ui.toggle_focus();
         // Fill out

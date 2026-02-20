@@ -9,6 +9,7 @@ use serde::{Deserialize, Deserializer};
 
 use serde::de::{self, IntoDeserializer, Visitor};
 
+use crate::slurm::config::DefaultMem;
 use crate::widgets::Utilization;
 
 use super::jobs::Job;
@@ -229,6 +230,9 @@ pub struct Node {
     gres_used: String,
 
     #[serde(skip)]
+    pub default_mem: DefaultMem,
+
+    #[serde(skip)]
     pub jobs: Vec<Rc<Job>>,
 }
 
@@ -237,7 +241,7 @@ impl Node {
         unique_values(self.jobs.iter().map(|v| &v.user))
     }
 
-    pub fn cpu_utilization(&self, mem_per_cpu: u64) -> Utilization {
+    pub fn cpu_utilization(&self) -> Utilization {
         // CPU load is refreshed at a slow pace, resulting in load frequently
         // exceeding the number of CPUs allocated; for this reason the value
         // is capped at the number of CPUs reserved.
@@ -248,14 +252,22 @@ impl Node {
 
         // Reserved RAM "blocks" the allocation of CPUs, unless the end-user
         // explicitly requests less RAM per CPU for a job.
-        let blocked = if mem_per_cpu > 0 {
-            let free_mem = self.mem - self.mem_alloc;
-            let unblocked_cpus = free_mem / mem_per_cpu as usize;
+        let free_mem = self.mem - self.mem_alloc;
+        let blocked = match self.default_mem {
+            DefaultMem::Unlimited => 0.0,
+            DefaultMem::PerCPU(mem_per_cpu) => {
+                let unblocked_cpus = free_mem / mem_per_cpu;
 
-            // The amount of RAM available may be greater than mem_per_cpu * idle_cpus
-            self.cpu_state.idle.saturating_sub(unblocked_cpus) as f64
-        } else {
-            0.0
+                // The amount of RAM available may be greater than mem_per_cpu * idle_cpus
+                self.cpu_state.idle.saturating_sub(unblocked_cpus) as f64
+            }
+            DefaultMem::PerGPU(default_per_x) | DefaultMem::PerNode(default_per_x) => {
+                if free_mem < default_per_x {
+                    self.cpus as f64
+                } else {
+                    0.0
+                }
+            }
         };
 
         Utilization {
@@ -294,8 +306,8 @@ impl Node {
         }
     }
 
-    pub fn gpu_utilization(&self, mem_per_cpu: u64) -> Utilization {
-        let cpu_utilization = self.cpu_utilization(mem_per_cpu);
+    pub fn gpu_utilization(&self) -> Utilization {
+        let cpu_utilization = self.cpu_utilization();
 
         // GPUs are considered blocked if there are no available CPUs assuming default RAM allocations
         let blocked = if cpu_utilization.available() < 1.0 {

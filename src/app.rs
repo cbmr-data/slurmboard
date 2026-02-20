@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 use color_eyre::Result;
 
 use crate::args::Args;
-use crate::slurm::{Partition, Slurm};
+use crate::slurm::{Partition, Slurm, SlurmConfig};
 
 #[derive(Debug)]
 pub struct App {
@@ -12,6 +12,8 @@ pub struct App {
     pub running: bool,
     /// Command-line args
     pub args: Args,
+    /// Cluster config
+    pub config: SlurmConfig,
     /// Slurm nodes organized by partition
     pub cluster: Vec<Rc<Partition>>,
     /// Time since last automatic update
@@ -21,11 +23,13 @@ pub struct App {
 impl App {
     /// Constructs a new instance of [`App`].
     pub fn new(args: Args) -> Result<Self> {
-        let cluster = Slurm::collect()?;
+        let config = SlurmConfig::collect()?;
+        let cluster = Slurm::collect(&config)?;
 
         Ok(Self {
             args,
             running: true,
+            config,
             cluster,
             last_update: Instant::now(),
         })
@@ -45,7 +49,7 @@ impl App {
         // A minimum refresh rate is enforced to prevent the user just holding `r`
         let update_rate = Duration::from_secs(interval.max(1));
         if self.last_update.elapsed() >= update_rate {
-            self.cluster = Slurm::collect()?;
+            self.cluster = Slurm::collect(&self.config)?;
             self.last_update = Instant::now();
 
             return Ok(true);

@@ -61,9 +61,6 @@ pub struct NodeTableState {
     cluster: Vec<Rc<Partition>>,
     /// Rows of nodes/partitions as indices into `cluster`, plus empty rows
     rows: Vec<NodeRow>,
-
-    /// Value of DefMemPerCPU from /etc/slurm/slurm.conf
-    def_mem_per_cpu: u64,
 }
 
 impl GenericTableState<Column> for NodeTableState {
@@ -114,10 +111,6 @@ impl GenericTableState<Column> for NodeTableState {
 }
 
 impl NodeTableState {
-    pub fn set_def_mem_per_cpu(&mut self, def_mem_per_cpu: u64) {
-        self.def_mem_per_cpu = def_mem_per_cpu;
-    }
-
     pub fn focus(&mut self, focus: bool) {
         self.focus = focus;
     }
@@ -250,7 +243,7 @@ impl NodeTableState {
             Column::CPUs => partition
                 .nodes
                 .iter()
-                .map(|v| v.cpu_utilization(self.def_mem_per_cpu))
+                .map(|v| v.cpu_utilization())
                 .sum::<Utilization>()
                 .to_line(constraint_length(*constraint))
                 .into(),
@@ -278,7 +271,7 @@ impl NodeTableState {
                 .nodes
                 .iter()
                 .map(|v| {
-                    let mut gpus = v.gpu_utilization(self.def_mem_per_cpu);
+                    let mut gpus = v.gpu_utilization();
                     if !v.state.is_available() {
                         gpus.allocated = 0.0;
                         gpus.utilized = 0.0;
@@ -306,7 +299,7 @@ impl NodeTableState {
             Column::Users => right_align_text(node.users()),
             Column::Jobs => right_align_text(node.jobs.len()),
             Column::CPUs => node
-                .cpu_utilization(self.def_mem_per_cpu)
+                .cpu_utilization()
                 .to_line(constraint_length(*constraint))
                 .into(),
 
@@ -315,7 +308,7 @@ impl NodeTableState {
                 .to_line(constraint_length(*constraint))
                 .into(),
             Column::GPUs => node
-                .gpu_utilization(self.def_mem_per_cpu)
+                .gpu_utilization()
                 .to_line(constraint_length(*constraint))
                 .into(),
         }
@@ -339,7 +332,6 @@ impl Default for NodeTableState {
             table: TableState::default(),
             cluster: Vec::default(),
             rows: Vec::default(),
-            def_mem_per_cpu: 0,
         }
     }
 }
