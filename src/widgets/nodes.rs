@@ -88,8 +88,8 @@ impl GenericTableState<Column> for NodeTableState {
         match &self.rows[row] {
             NodeRow::Partition(partition) => self.partition_text(partition, constraint, column),
             NodeRow::Node(node) => {
-                let last = row + 1 == self.rows.len()
-                    || matches!(self.rows[row + 1], NodeRow::Partition(_));
+                let last =
+                    row + 1 == self.rows.len() || matches!(self.rows[row + 1], NodeRow::Spacing);
 
                 self.node_text(node, constraint, column, last)
             }
