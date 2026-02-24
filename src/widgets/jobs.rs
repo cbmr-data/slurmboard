@@ -3,7 +3,7 @@ use std::{fmt::Debug, rc::Rc};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
-    style::{Color, Stylize},
+    style::Stylize,
     symbols::border,
     text::Text,
     widgets::{Block, Borders, StatefulWidgetRef, TableState, Widget},
@@ -220,7 +220,7 @@ impl GenericTableState<Column> for JobTableState {
         };
 
         if job.state != JobState::Running {
-            text.fg(Color::Gray)
+            text.dim()
         } else {
             text
         }
