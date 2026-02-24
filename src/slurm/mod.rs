@@ -20,17 +20,20 @@ pub enum Identifier {
 
 pub struct Slurm {}
 
+type JobMap = HashMap<String, Vec<Rc<Job>>>;
+type NodeMap = HashMap<String, Vec<Rc<Node>>>;
+
 impl Slurm {
     pub fn config() -> Result<SlurmConfig> {
         SlurmConfig::collect()
     }
 
     pub fn collect(config: &SlurmConfig) -> Result<Vec<Rc<Partition>>> {
-        let mut jobs = Slurm::collect_jobs()?;
+        let (mut unallocated, mut allocated) = Slurm::collect_jobs()?;
 
-        let mut partitions: HashMap<String, Vec<Rc<Node>>> = HashMap::new();
+        let mut partitions = NodeMap::new();
         for mut node in Node::collect()? {
-            node.jobs = jobs.remove(&node.name).unwrap_or_default();
+            node.jobs = allocated.remove(&node.name).unwrap_or_default();
 
             node.default_mem = config.default_mem;
             if let Some(partition) = config.partitions.get(&node.partition.label) {
@@ -46,12 +49,16 @@ impl Slurm {
         }
 
         let mut cluster: Vec<Rc<Partition>> = Vec::new();
-        for (_, nodes) in partitions.drain() {
+        for (label, nodes) in partitions.drain() {
             assert!(!nodes.is_empty());
 
             let mut jobs = Vec::new();
             for node in &nodes {
                 jobs.extend_from_slice(&node.jobs);
+            }
+
+            if let Some(unallocated) = unallocated.remove(&label) {
+                jobs.extend_from_slice(&unallocated);
             }
 
             cluster.push(Rc::new(Partition {
@@ -66,17 +73,25 @@ impl Slurm {
         Ok(cluster)
     }
 
-    fn collect_jobs() -> Result<HashMap<String, Vec<Rc<Job>>>> {
+    fn collect_jobs() -> Result<(JobMap, JobMap)> {
         // FIXME: Warn on unassigned jobs
-        let mut nodes: HashMap<String, Vec<Rc<Job>>> = HashMap::new();
+        let mut unallocated = JobMap::new();
+        let mut allocated = JobMap::new();
         for job in Job::collect()? {
             let job = Rc::new(job);
 
-            for node in &job.nodelist {
-                nodes.entry(node.clone()).or_default().push(job.clone());
+            if job.nodelist.is_empty() {
+                unallocated
+                    .entry(job.partition.label.clone())
+                    .or_default()
+                    .push(job.clone());
+            } else {
+                for node in &job.nodelist {
+                    allocated.entry(node.clone()).or_default().push(job.clone());
+                }
             }
         }
 
-        Ok(nodes)
+        Ok((unallocated, allocated))
     }
 }
