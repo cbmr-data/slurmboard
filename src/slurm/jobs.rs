@@ -150,10 +150,13 @@ pub struct Job {
     /// Zero or more nodes assigned to this job
     #[serde(deserialize_with = "nodelist_from_str")]
     pub nodelist: Vec<String>,
-
     /// Name of partition to which this job belongs
     #[serde(deserialize_with = "PartitionName::from_str")]
     pub partition: PartitionName,
+
+    /// Whether or not the job is a batch or srun job
+    #[serde(rename = "BATCH_FLAG", deserialize_with = "bool_from_01")]
+    pub batch: bool,
     /// State of the job; typically Running since source is `squeue`
     pub state: JobState,
     /// Owner of the job
@@ -290,6 +293,7 @@ fn squeue_format() -> String {
             "Tres-Alloc",
             "Tres-Per-Node",
             "UserName",
+            "BatchFlag",
         ]
         .iter(),
     )
@@ -305,6 +309,21 @@ where
         .filter(|v| !v.is_empty())
         .map(|v| v.to_string())
         .collect::<Vec<_>>())
+}
+
+fn bool_from_01<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value: &str = Deserialize::deserialize(deserializer)?;
+    match value {
+        "0" => Ok(false),
+        "1" => Ok(true),
+        _ => Err(de::Error::custom(format!(
+            "invalid boolean value {:?}",
+            value
+        ))),
+    }
 }
 
 fn parse_memory(value: &str) -> Result<usize> {

@@ -25,6 +25,7 @@ enum Column {
     JobID,
     JobArray,
     User,
+    Batch,
     State,
     Runtime,
     Nodes,
@@ -92,6 +93,7 @@ impl JobTableState {
             Column::JobID => |a, b| a.id.cmp(&b.id),
             Column::JobArray => |a, b| a.array_job_id.cmp(&b.array_job_id),
             Column::User => |a, b| a.user.cmp(&b.user),
+            Column::Batch => |a, b| a.batch.cmp(&b.batch),
             Column::State => |a, b| a.state.cmp(&b.state),
             Column::Runtime => |a, b| a.time.cmp(&b.time),
             Column::Nodes => |a, b| a.nodes.cmp(&b.nodes),
@@ -143,6 +145,7 @@ impl Default for JobTableState {
             Column::JobID,
             Column::JobArray,
             Column::User,
+            Column::Batch,
             Column::State,
             Column::Runtime,
             Column::Nodes,
@@ -212,6 +215,7 @@ impl GenericTableState<Column> for JobTableState {
                 }
             }
             Column::User => job.user.clone().into(),
+            Column::Batch => if job.batch { "yes" } else { "no" }.into(),
             Column::State => job.state.to_string().into(),
             Column::Runtime => right_align_text(&job.time),
             Column::Nodes => right_align_text(job.nodes),
