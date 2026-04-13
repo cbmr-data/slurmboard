@@ -139,25 +139,29 @@ impl JobTableState {
 
 impl Default for JobTableState {
     fn default() -> Self {
+        let columns = vec![
+            Column::JobID,
+            Column::JobArray,
+            Column::User,
+            Column::State,
+            Column::Runtime,
+            Column::Nodes,
+            Column::Tasks,
+            Column::CPUs,
+            Column::GPUs,
+            Column::Memory,
+            Column::Nodelist,
+            Column::Name,
+        ];
+        // Default sort column
+        let sort_column = columns.iter().position(|v| *v == Column::Runtime).unwrap();
+
         Self {
             focus: false,
-            columns: vec![
-                Column::JobID,
-                Column::JobArray,
-                Column::User,
-                Column::State,
-                Column::Runtime,
-                Column::Nodes,
-                Column::Tasks,
-                Column::CPUs,
-                Column::GPUs,
-                Column::Memory,
-                Column::Nodelist,
-                Column::Name,
-            ],
+            columns,
             table: TableState::default(),
             jobs: Vec::default(),
-            sort_column: 4,
+            sort_column,
             sort_order: SortOrder::default(),
         }
     }
