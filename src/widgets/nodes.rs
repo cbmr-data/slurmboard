@@ -210,11 +210,11 @@ impl NodeTableState {
                             return;
                         }
                     }
-                    (Selection::Partition(selection), NodeRow::Partition(candidate)) => {
-                        if selection.name.same(&candidate.name) {
-                            self.table.select(Some(idx));
-                            return;
-                        }
+                    (Selection::Partition(selection), NodeRow::Partition(candidate))
+                        if selection.name.same(&candidate.name) =>
+                    {
+                        self.table.select(Some(idx));
+                        return;
                     }
                     _ => {}
                 }
