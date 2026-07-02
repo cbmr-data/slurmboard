@@ -215,7 +215,7 @@ impl GenericTableState<Column> for JobTableState {
                 }
             }
             Column::User => job.user.clone().into(),
-            Column::Batch => if job.batch { "yes" } else { "no" }.into(),
+            Column::Batch => if job.batch > 0 { "yes" } else { "no" }.into(),
             Column::State => job.state.to_string().into(),
             Column::Runtime => right_align_text(&job.time),
             Column::Nodes => right_align_text(job.nodes),

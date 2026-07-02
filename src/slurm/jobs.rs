@@ -155,8 +155,9 @@ pub struct Job {
     pub partition: PartitionName,
 
     /// Whether or not the job is a batch or srun job
-    #[serde(rename = "BATCH_FLAG", deserialize_with = "bool_from_01")]
-    pub batch: bool,
+    /// 0 = interactive, 1 = batch, 2+ batch job requeued due to a failure
+    #[serde(rename = "BATCH_FLAG")]
+    pub batch: usize,
     /// State of the job; typically Running since source is `squeue`
     pub state: JobState,
     /// Owner of the job
@@ -309,21 +310,6 @@ where
         .filter(|v| !v.is_empty())
         .map(|v| v.to_string())
         .collect::<Vec<_>>())
-}
-
-fn bool_from_01<'de, D>(deserializer: D) -> Result<bool, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let value: &str = Deserialize::deserialize(deserializer)?;
-    match value {
-        "0" => Ok(false),
-        "1" => Ok(true),
-        _ => Err(de::Error::custom(format!(
-            "invalid boolean value {:?}",
-            value
-        ))),
-    }
 }
 
 fn parse_memory(value: &str) -> Result<usize> {
