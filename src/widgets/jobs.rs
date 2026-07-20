@@ -134,8 +134,10 @@ impl JobTableState {
     }
 
     pub fn click(&mut self, row: usize) {
-        let offset = self.table.offset().saturating_add(row);
-        self.table.select(Some(offset.saturating_sub(1)));
+        let offset = self.table.offset().saturating_add(row).saturating_sub(1);
+        if offset < self.jobs.len() {
+            self.table.select(Some(offset));
+        }
     }
 }
 
